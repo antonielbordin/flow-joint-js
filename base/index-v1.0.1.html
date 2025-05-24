@@ -1,0 +1,224 @@
+<!--✅ Melhorias aplicadas:
+
+    Adição de movimentação de elementos no canvas.
+
+    Permitir deletar elementos com a tecla Delete.
+
+    Selecionar elementos ao clicar.
+
+    Permitir desconectar links.
+
+    Melhorar aparência de conexão.
+
+    Resetar o fluxo (botão “Limpar”).-->
+  <!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Workflow Builder</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@joint/core@4.0.0/dist/joint.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@joint/core@4.0.0/dist/joint.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { height: 100%; font-family: Arial, sans-serif; }
+        .container { display: flex; height: 100vh; }
+        .sidebar {
+            width: 250px;
+            background-color: #f4f4f4;
+            border-right: 1px solid #ccc;
+            padding: 20px;
+        }
+        .sidebar h2 { margin-bottom: 20px; font-size: 20px; color: #333; }
+        .sidebar button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .sidebar button:hover { background-color: #d0d0d0; }
+        .canvas-area { flex: 1; background-color: #fff; position: relative; }
+        #paper { width: 100%; height: 100%; }
+        .actions { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <h2>Workflows</h2>
+        <button onclick="addStart()">Início</button>
+        <button onclick="addTask()">Tarefa</button>
+        <button onclick="addDecision()">Decisão</button>
+        <button onclick="addNotification()">Notificação</button>
+        <button onclick="addEnd()">Fim</button>
+
+        <div class="actions">
+            <button onclick="saveDiagram()">Salvar</button>
+            <button onclick="loadDiagram()">Carregar</button>
+            <input type="file" id="fileInput" style="display:none;" onchange="handleFile(event)">
+        </div>
+    </div>
+    <div class="canvas-area">
+        <div id="paper"></div>
+    </div>
+</div>
+
+<script>
+    const graph = new joint.dia.Graph();
+
+    const paper = new joint.dia.Paper({
+        el: document.getElementById('paper'),
+        model: graph,
+        width: '100%',
+        height: '100%',
+        gridSize: 10,
+        drawGrid: true,
+        background: { color: '#f9f9f9' },
+        defaultLink: () => new joint.shapes.standard.Link({
+            attrs: { line: { stroke: '#333', strokeWidth: 2 } },
+            connector: { name: 'rounded' }
+        }),
+        interactive: {
+            linkMove: true,
+            elementMove: true
+        }
+    });
+
+    let offsetY = 50;
+    let lastElement = null;
+
+    function connectElements(source, target) {
+        const link = new joint.shapes.standard.Link();
+        link.source(source);
+        link.target(target);
+        link.addTo(graph);
+    }
+
+    function addElement(element) {
+        element.position(100, offsetY);
+        element.addTo(graph);
+        if (lastElement) connectElements(lastElement, element);
+        lastElement = element;
+        offsetY += 100;
+    }
+
+    function addStart() {
+        const start = new joint.shapes.standard.Circle();
+        start.resize(50, 50);
+        start.attr({
+            body: { fill: '#66bb6a', stroke: '#333' },
+            label: { text: 'Início', fill: '#fff', fontSize: 14 }
+        });
+        addElement(start);
+    }
+
+    function addTask() {
+        const task = new joint.shapes.standard.Rectangle();
+        task.resize(120, 50);
+        task.attr({
+            body: { fill: '#63a2d8', stroke: '#333' },
+            label: { text: 'Tarefa', fill: '#fff', fontSize: 14 }
+        });
+        addElement(task);
+    }
+
+    function addNotification() {
+        const notif = new joint.shapes.standard.Circle();
+        notif.resize(50, 50);
+        notif.attr({
+            body: { fill: '#ffc107', stroke: '#333' },
+            label: { text: '🔔', fontSize: 20 }
+        });
+        addElement(notif);
+    }
+
+    function addDecision() {
+        const rhombus = new joint.shapes.standard.Polygon();
+        rhombus.resize(70, 70);
+        rhombus.attr({
+            body: {
+                refPoints: '50,0 100,50 50,100 0,50',
+                fill: '#ff7043',
+                stroke: '#333'
+            },
+            label: { text: 'Decisão', fill: '#fff', fontSize: 14 }
+        });
+        addElement(rhombus);
+    }
+
+    function addEnd() {
+        const end = new joint.shapes.standard.Circle();
+        end.resize(40, 40);
+        end.attr({
+            body: { fill: '#999', stroke: '#333' },
+            label: { text: 'Fim', fill: '#fff', fontSize: 12 }
+        });
+        addElement(end);
+    }
+
+    // 🔐 SALVAR DIAGRAMA
+    function saveDiagram() {
+        const json = JSON.stringify(graph.toJSON());
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'workflow.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // 📥 CARREGAR DIAGRAMA
+    function loadDiagram() {
+        document.getElementById('fileInput').click();
+    }
+
+    function handleFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const json = JSON.parse(e.target.result);
+            graph.fromJSON(json);
+        };
+        reader.readAsText(file);
+    }
+
+    // ⌨️ DELETAR ELEMENTO COM A TECLA DELETE
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete') {
+            const cells = graph.getCells();
+            cells.forEach(cell => {
+                if (cell.get('selected')) {
+                    cell.remove();
+                }
+            });
+        }
+    });
+
+    // 🖱️ SELECIONAR ELEMENTO COM CLIQUE
+    paper.on('element:pointerclick', (elementView) => {
+        graph.getElements().forEach(el => el.set('selected', false));
+        elementView.model.set('selected', true);
+    });
+
+    paper.on('blank:pointerclick', () => {
+        graph.getElements().forEach(el => el.set('selected', false));
+    });
+
+    // ♻️ BOTÃO LIMPAR DIAGRAMA
+    const clearBtn = document.createElement('button');
+    clearBtn.innerText = 'Limpar';
+    clearBtn.onclick = () => {
+        graph.clear();
+        lastElement = null;
+        offsetY = 50;
+    };
+    document.querySelector('.actions').appendChild(clearBtn);
+</script>
+
+</html>

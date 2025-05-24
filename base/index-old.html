@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@joint/core/dist/joint.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@joint/core/dist/joint.js"></script>
+</head>
+<body>
+    <div id="myholder"></div>
+    <script>
+        var graph = new joint.dia.Graph;
+        var paper = new joint.dia.Paper({
+            el: document.getElementById('myholder'),
+            model: graph,
+            width: 600,
+            height: 200,
+            gridSize: 1
+        });
+
+        var task1 = new joint.shapes.standard.Rectangle({
+            position: { x: 100, y: 50 },
+            size: { width: 100, height: 40 },
+            attrs: {
+                body: {
+                    fill: 'lightblue',
+                    stroke: 'black'
+                },
+                label: {
+                    text: 'Rectangle 1',
+                    fill: 'black'
+                }
+            }
+        });
+
+        var task2 = new joint.shapes.standard.Rectangle({
+            position: { x: 400, y: 50 },
+            size: { width: 100, height: 40 },
+            attrs: {
+                body: {
+                    fill: '#63a2d8',
+                    stroke: '#4477aa'
+                },
+                label: {
+                    text: 'Rectangle 2',
+                    fill: '#fff'
+                }
+            }
+        });
+
+        var link = new joint.shapes.standard.Link({
+            source: { id: task1.id },
+            target: { id: task2.id },
+            attrs: {
+                line: {
+                    stroke: 'black',
+                    strokeWidth: 2
+                }
+            }
+        });
+
+        graph.addCells([task1, task2, link]);
+    </script>
+</body>
+</html>
